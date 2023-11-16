@@ -6,8 +6,12 @@ app.use(cors());
 const axios = require("axios");
 const mongoose = require("mongoose");
 mongoose.connect("mongodb://localhost:27017/marvel");
+const User = require("./modules/User");
 
-app.get("/", async (req, res) => {
+const userRouter = require("./routes/user");
+app.use(userRouter);
+
+app.post("/", async (req, res) => {
   try {
     const title = req.body.title || "";
     const page = req.query.page;
@@ -34,7 +38,7 @@ app.get("/", async (req, res) => {
   }
 });
 
-app.get("/comics", async (req, res) => {
+app.post("/comics", async (req, res) => {
   try {
     const title = req.body.title || "";
     const page = req.query.page;
@@ -78,6 +82,96 @@ app.get("/character/:id", async (req, res) => {
       comics.push(comic);
     }
     res.status(200).json(comics);
+  } catch (error) {
+    res.status(500).json(error.message);
+  }
+});
+
+app.post("/character/:id", async (req, res) => {
+  try {
+    const { token } = req.body;
+    const { id } = req.params;
+    const userFind = await User.findOne({ token: token });
+    const indexChar = userFind.characters.indexOf(id);
+    if (indexChar !== -1) {
+      userFind.characters.splice(indexChar, 1);
+      await userFind.save();
+      return res.status(201).json({
+        message: "personnage supprimé des favoris",
+        characters: userFind.characters,
+      });
+    } else {
+      userFind.characters.push(id);
+      await userFind.save();
+      return res.status(201).json({
+        message: "personnage ajouté dans les favoris",
+        characters: userFind.characters,
+      });
+    }
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.post("/comics/:id", async (req, res) => {
+  try {
+    const { token } = req.body;
+    const { id } = req.params;
+    const userFind = await User.findOne({ token: token });
+    const indexComics = userFind.comics.indexOf(id);
+    if (indexComics !== -1) {
+      userFind.comics.splice(indexComics, 1);
+      await userFind.save();
+      return res.status(201).json({
+        message: "comics supprimé des favoris",
+        comics: userFind.comics,
+      });
+    } else {
+      userFind.comics.push(id);
+      await userFind.save();
+      return res.status(201).json({
+        message: "comics ajouté dans les favoris",
+        comics: userFind.comics,
+      });
+    }
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.post("/favorite", async (req, res) => {
+  try {
+    const favoriteChar = req.body.char;
+    const favoriteComics = req.body.comics;
+    const characters = [];
+    const comics = [];
+    const sizePicture = "/portrait_xlarge.";
+    console.log(favoriteChar);
+    for (let i = 0; i < favoriteChar.length; i++) {
+      const response = await axios.get(
+        `https://lereacteur-marvel-api.herokuapp.com/character/${favoriteChar[i]}?apiKey=X7DCv47pkgb5APGd`
+      );
+      const character = {
+        picture: `${response.data.thumbnail.path}${sizePicture}${response.data.thumbnail.extension}`,
+        name: response.data.name,
+        description: response.data.description,
+        id: response.data._id,
+      };
+      characters.push(character);
+    }
+    for (let i = 0; i < favoriteComics.length; i++) {
+      const response = await axios.get(
+        `https://lereacteur-marvel-api.herokuapp.com/comic/${favoriteComics[i]}?apiKey=X7DCv47pkgb5APGd`
+      );
+      const comic = {
+        picture: `${response.data.thumbnail.path}${sizePicture}${response.data.thumbnail.extension}`,
+        name: response.data.name,
+        description: response.data.description,
+        id: response.data._id,
+      };
+      comics.push(comic);
+    }
+    res.status(200).json({ characters: characters, comics: comics });
   } catch (error) {
     res.status(500).json(error.message);
   }
