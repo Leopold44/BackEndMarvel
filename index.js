@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -5,7 +6,8 @@ app.use(express.json());
 app.use(cors());
 const axios = require("axios");
 const mongoose = require("mongoose");
-mongoose.connect("mongodb://localhost:27017/marvel");
+const { API_KEY, MONGODB_URI, PORT } = process.env;
+mongoose.connect(MONGODB_URI);
 const User = require("./modules/User");
 
 const userRouter = require("./routes/user");
@@ -19,7 +21,7 @@ app.post("/", async (req, res) => {
     const sizePicture = "/portrait_xlarge.";
     const nbCharactersByPage = 100;
     const response = await axios.get(
-      `https://lereacteur-marvel-api.herokuapp.com/characters?apiKey=X7DCv47pkgb5APGd&skip=${
+      `https://lereacteur-marvel-api.herokuapp.com/characters?apiKey=${API_KEY}&skip=${
         (page - 1) * nbCharactersByPage
       }&name=${title}`
     );
@@ -46,7 +48,7 @@ app.post("/comics", async (req, res) => {
     const sizePicture = "/portrait_xlarge.";
     const nbComicsByPage = 100;
     const response = await axios.get(
-      `https://lereacteur-marvel-api.herokuapp.com/comics?apiKey=X7DCv47pkgb5APGd&skip=${
+      `https://lereacteur-marvel-api.herokuapp.com/comics?apiKey=${API_KEY}&skip=${
         (page - 1) * nbComicsByPage
       }&title=${title}`
     );
@@ -70,7 +72,7 @@ app.get("/character/:id", async (req, res) => {
     const comics = [];
     const sizePicture = "/portrait_xlarge.";
     const response = await axios.get(
-      `https://lereacteur-marvel-api.herokuapp.com/comics/${req.params.id}?apiKey=X7DCv47pkgb5APGd`
+      `https://lereacteur-marvel-api.herokuapp.com/comics/${req.params.id}?apiKey=${API_KEY}`
     );
     for (i = 0; i < response.data.comics.length; i++) {
       const comic = {
@@ -149,7 +151,7 @@ app.post("/favorite", async (req, res) => {
     const sizePicture = "/portrait_xlarge.";
     for (let i = 0; i < favoriteChar.length; i++) {
       const response = await axios.get(
-        `https://lereacteur-marvel-api.herokuapp.com/character/${favoriteChar[i]}?apiKey=X7DCv47pkgb5APGd`
+        `https://lereacteur-marvel-api.herokuapp.com/character/${favoriteChar[i]}?apiKey=${API_KEY}`
       );
       const character = {
         picture: `${response.data.thumbnail.path}${sizePicture}${response.data.thumbnail.extension}`,
@@ -161,7 +163,7 @@ app.post("/favorite", async (req, res) => {
     }
     for (let i = 0; i < favoriteComics.length; i++) {
       const response = await axios.get(
-        `https://lereacteur-marvel-api.herokuapp.com/comic/${favoriteComics[i]}?apiKey=X7DCv47pkgb5APGd`
+        `https://lereacteur-marvel-api.herokuapp.com/comic/${favoriteComics[i]}?apiKey=${API_KEY}`
       );
       const comic = {
         picture: `${response.data.thumbnail.path}${sizePicture}${response.data.thumbnail.extension}`,
@@ -181,6 +183,6 @@ app.post("/favorite", async (req, res) => {
 app.all("*", (req, res) => {
   res.status(404).json({ message: "page non trouvée" });
 });
-app.listen(3000, () => {
+app.listen(PORT, () => {
   console.log("seveur lancé");
 });
