@@ -81,13 +81,14 @@ app.get("/character/:id", async (req, res) => {
       };
       comics.push(comic);
     }
-    res.status(200).json(comics);
+    const comicsChar = [comics, response.data.name];
+    res.status(200).json(comicsChar);
   } catch (error) {
     res.status(500).json(error.message);
   }
 });
 
-app.post("/character/:id", async (req, res) => {
+app.post("/characters/:id", async (req, res) => {
   try {
     const { token } = req.body;
     const { id } = req.params;
@@ -146,7 +147,6 @@ app.post("/favorite", async (req, res) => {
     const characters = [];
     const comics = [];
     const sizePicture = "/portrait_xlarge.";
-    console.log(favoriteChar);
     for (let i = 0; i < favoriteChar.length; i++) {
       const response = await axios.get(
         `https://lereacteur-marvel-api.herokuapp.com/character/${favoriteChar[i]}?apiKey=X7DCv47pkgb5APGd`
@@ -165,12 +165,13 @@ app.post("/favorite", async (req, res) => {
       );
       const comic = {
         picture: `${response.data.thumbnail.path}${sizePicture}${response.data.thumbnail.extension}`,
-        name: response.data.name,
+        name: response.data.title,
         description: response.data.description,
         id: response.data._id,
       };
       comics.push(comic);
     }
+    console.log(comics);
     res.status(200).json({ characters: characters, comics: comics });
   } catch (error) {
     res.status(500).json(error.message);
